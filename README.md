@@ -1,1 +1,1 @@
-# mouse-cable-remover
+# mice-cable-remover

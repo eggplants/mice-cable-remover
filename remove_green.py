@@ -1,10 +1,17 @@
 #!/usr/bin/env python
+from glob import glob
 from typing import Tuple
 
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture('data/test_split_body_with_cable.avi')
+datas = glob('data/*') + glob('../data_with_cable/*')
+
+for i, n in enumerate(datas):
+    print(i, ":", n)
+
+s = input("enter number: ")
+cap = cv2.VideoCapture(datas[int(s)])
 
 
 def make_hsv_range(low: Tuple[int, int, int], up: Tuple[int, int, int]
@@ -28,8 +35,16 @@ len_video = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 ret, frame = cap.read()
 
 i = 1
+x, y = 0, 0
 while ret:
     mask = cv2.inRange(frame, *filter_)
+    # mask = cv2.dilate(mask, kernel1)
+    # mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel1)
+    # mask = cv2.erode(mask, kernel2)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((20, 20), np.uint8))
+    mask = cv2.dilate(mask, np.ones((50, 50), np.uint8))
+
     nlabels, labels, stats, centroids = cv2.connectedComponentsWithStats(
         mask, 4)
     stats = stats[1:]
@@ -37,9 +52,12 @@ while ret:
         a_, b_ = np.sort(stats[_, 2:4])
         if a_/b_ < 0.1:
             stats[_, -1] = 0
-
-    max_ind = np.argmax(stats[:, -1]) + 1
-    x, y = centroids[max_ind]
+    if len(stats) > 0:
+        max_ind = np.argmax(stats[:, -1]) + 1
+        x, y = centroids[max_ind]
+    else:
+        input()
+        pass
     binarized_frame = cv2.circle(mask,
                                  (int(x), int(y), ),
                                  10, (150, 150, 150),  thickness=4)
